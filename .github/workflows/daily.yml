@@ -1,0 +1,80 @@
+# Daily cloud run: refresh data, settle yesterday, publish today's predictions, deploy the site.
+# 04:00 UTC = 12:00 Beijing. Full rebuild + walk-forward retrain + backtest runs on Mondays
+# and whenever the data/model cache is cold (first run, or cache evicted).
+name: entropy-xi-daily
+
+on:
+  schedule:
+    - cron: "0 4 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: entropy-xi-daily
+  cancel-in-progress: false
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - run: pip install -r requirements.txt
+
+      - name: Restore data / model cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            data/raw
+            data/processed
+            models
+          key: exi-${{ github.run_id }}
+          restore-keys: exi-
+
+      - name: Weekly (or cold-cache) rebuild, walk-forward training and backtest
+        run: |
+          if [ ! -f models/model_club.joblib ] || [ ! -f models/mac.joblib ] || [ "$(date -u +%u)" = "1" ]; then
+            python -m entropy_xi build
+            python -m entropy_xi train
+            python -m entropy_xi backtest
+          fi
+
+      - name: Daily job
+        run: python -m entropy_xi daily
+
+      - name: Commit the frozen ledger and site data
+        run: |
+          git config user.name "entropy-xi-bot"
+          git config user.email "entropy-xi-bot@users.noreply.github.com"
+          git add data/ledger site/data
+          if git diff --cached --quiet; then
+            echo "nothing to commit"
+          else
+            git commit -m "daily update $(date -u +%Y-%m-%d)"
+            git pull --rebase --autostash origin "${GITHUB_REF_NAME}"
+            git push origin "HEAD:${GITHUB_REF_NAME}"
+          fi
+
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: site
+
+  deploy:
+    needs: run
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>熵锋奕 · Entropy XI</title>
+<meta name="description" content="熵锋奕 Entropy XI — 足球大数据多算法预测与预警：亚洲让球方向、大小球、胜平负（不低于1.40），每日更新并公开长期战绩。">
+<meta name="theme-color" content="#04102b">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;800&family=JetBrains+Mono:wght@400;600&family=Noto+Sans+SC:wght@400;500;700&display=swap" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="assets/css/app.css?v=20261019a">
+</head>
+<body>
+<canvas id="bg-net" aria-hidden="true"></canvas>
+<div class="bg-glow" aria-hidden="true"></div>
+
+<header class="topbar">
+  <a class="brand" href="#/home" aria-label="熵锋奕 Entropy XI">
+    <svg class="brand-mark" viewBox="0 0 48 48" aria-hidden="true">
+      <defs><linearGradient id="bm" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#5ee7ff"/><stop offset="1" stop-color="#2f6bff"/></linearGradient></defs>
+      <polygon points="24,3 42,13.5 42,34.5 24,45 6,34.5 6,13.5" fill="none" stroke="url(#bm)" stroke-width="2.4"/>
+      <path d="M14 30 L20 20 L26 27 L34 15" fill="none" stroke="#5ee7ff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+      <circle cx="34" cy="15" r="2.8" fill="#fff"/>
+    </svg>
+    <span class="brand-text"><b>熵锋奕</b><small>ENTROPY XI</small></span>
+  </a>
+  <nav class="nav" id="nav">
+    <a href="#/home" data-i18n="nav.home">首页</a>
+    <a href="#/predict" data-i18n="nav.predict">今日预测</a>
+    <a href="#/results" data-i18n="nav.results">赛果复盘</a>
+    <a href="#/stats" data-i18n="nav.stats">战绩统计</a>
+    <a href="#/teams" data-i18n="nav.teams">球队数据</a>
+    <a href="#/calc" data-i18n="nav.calc">盘口计算器</a>
+    <a href="#/method" data-i18n="nav.method">模型说明</a>
+  </nav>
+  <div class="top-right">
+    <span class="update-pill" id="update-pill"><i class="dot"></i><span id="update-text">—</span></span>
+    <button class="lang-btn" id="lang-btn" type="button" aria-label="Switch language">EN</button>
+    <button class="menu-btn" id="menu-btn" type="button" aria-label="Menu"><span></span><span></span><span></span></button>
+  </div>
+</header>
+
+<main id="app" class="app" tabindex="-1">
+  <div class="loading"><div class="spinner"></div><span data-i18n="loading">数据加载中…</span></div>
+</main>
+
+<div class="modal" id="modal" hidden>
+  <div class="modal-backdrop" data-close></div>
+  <div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <button class="modal-close" data-close aria-label="Close">×</button>
+    <div id="modal-body"></div>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="footer-inner">
+    <div>
+      <b>熵锋奕 · Entropy XI</b>
+      <p data-i18n="footer.disclaimer">本站内容为基于公开数据的统计模型输出，仅供研究与交流，不构成任何投注或投资建议。历史表现不代表未来结果。未满18周岁请勿参与任何博彩活动，请理性对待。</p>
+    </div>
+    <div class="footer-src">
+      <span data-i18n="footer.sources">数据来源</span>: ESPN · football-data.co.uk · martj42/international_results
+      <br><span data-i18n="footer.inspired">算法参考</span>: ProphitBet (kochlisGit) · Dixon–Coles · Pi-ratings · World Football Elo
+    </div>
+  </div>
+</footer>
+
+<script src="assets/vendor/echarts.min.js"></script>
+<script src="assets/js/i18n.js?v=20261019a"></script>
+<script src="assets/js/football.js?v=20261019a"></script>
+<script src="assets/js/app.js?v=20261019a"></script>
+</body>
+</html>

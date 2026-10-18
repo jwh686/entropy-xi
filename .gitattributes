@@ -1,0 +1,5 @@
+* text=auto eol=lf
+*.ps1 text eol=crlf
+site/assets/vendor/** -diff
+site/data/** -diff linguist-generated
+data/ledger/** -diff linguist-generated
