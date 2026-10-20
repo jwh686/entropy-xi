@@ -1,12 +1,19 @@
-# Daily cloud run: refresh data, settle yesterday, publish today's predictions, deploy the site.
-# 04:00 UTC = 12:00 Beijing. Full rebuild + walk-forward retrain + backtest runs on Mondays
-# and whenever the data/model cache is cold (first run, or cache evicted).
+# Cloud run every 3 hours: refresh data, settle finished matches, publish the next 36 h of predictions, deploy the site.
+# GitHub starts scheduled runs late (hours, at busy times) or drops them, so one run a day left the site a day stale.
+# Publishing is idempotent (each match is frozen once), so extra runs only refresh results, previews and the update time.
+# The full rebuild + walk-forward retrain + backtest runs once a week: on the first Monday (UTC) run, when the last one is
+# more than 7.5 days old (a missed Monday), when the data/model cache is cold, or when forced from "Run workflow".
 name: entropy-xi-daily
 
 on:
   schedule:
-    - cron: "0 4 * * *"
+    - cron: "23 */3 * * *"   # 00:23, 03:23, ... UTC = 08:23, 11:23, ... Beijing; off the busy top of the hour
   workflow_dispatch:
+    inputs:
+      rebuild:
+        description: "Force the weekly rebuild, retrain and backtest"
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -32,25 +39,51 @@ jobs:
       - run: pip install -r requirements.txt
 
       - name: Restore data / model cache
-        uses: actions/cache@v4
+        id: cache
+        uses: actions/cache/restore@v5
         with:
           path: |
             data/raw
             data/processed
             models
-          key: exi-${{ github.run_id }}
+          key: exi-${{ github.run_id }}   # never an exact hit: restores the newest exi-* cache
           restore-keys: exi-
 
+      # A failed rebuild must not keep the site stale: the daily job then runs on last week's models,
+      # and the next run retries the rebuild (the stamp is only written after a complete rebuild).
       - name: Weekly (or cold-cache) rebuild, walk-forward training and backtest
+        continue-on-error: true
+        env:
+          FORCE: ${{ inputs.rebuild && '1' || '' }}
         run: |
-          if [ ! -f models/model_club.joblib ] || [ ! -f models/mac.joblib ] || [ "$(date -u +%u)" = "1" ]; then
+          stamp=models/rebuilt_at   # UTC epoch seconds of the last complete rebuild
+          if [ ! -f "$stamp" ] && [ -f models/model_club.joblib ]; then
+            # cache saved before the stamp existed: use the production model's training time
+            python -c "import joblib, pandas as pd; print(int(pd.Timestamp(joblib.load('models/model_club.joblib')['trained']).timestamp()))" > "$stamp" || rm -f "$stamp"
+          fi
+          age_h=$(( ($(date -u +%s) - $(cat "$stamp" 2>/dev/null || echo 0)) / 3600 ))
+          echo "last rebuild ${age_h} h ago"
+          if [ -n "$FORCE" ] || [ ! -f models/model_club.joblib ] || [ ! -f models/model_intl.joblib ] || [ ! -f models/mac.joblib ] \
+             || [ "$age_h" -ge 180 ] || { [ "$(date -u +%u)" = "1" ] && [ "$age_h" -ge 48 ]; }; then
             python -m entropy_xi build
             python -m entropy_xi train
             python -m entropy_xi backtest
+            date -u +%s > "$stamp"
           fi
 
       - name: Daily job
         run: python -m entropy_xi daily
+
+      # Save a new cache (~135 MB) only when the models changed (weekly rebuild or retrain), not on every run.
+      - name: Save data / model cache
+        if: steps.cache.outputs.cache-matched-key != format('exi-{0}', hashFiles('models/**'))
+        uses: actions/cache/save@v5
+        with:
+          path: |
+            data/raw
+            data/processed
+            models
+          key: exi-${{ hashFiles('models/**') }}
 
       - name: Commit the frozen ledger and site data
         run: |
@@ -60,12 +93,12 @@ jobs:
           if git diff --cached --quiet; then
             echo "nothing to commit"
           else
-            git commit -m "daily update $(date -u +%Y-%m-%d)"
+            git commit -m "data update $(date -u '+%Y-%m-%d %H:%M') UTC"
             git pull --rebase --autostash origin "${GITHUB_REF_NAME}"
             git push origin "HEAD:${GITHUB_REF_NAME}"
           fi
 
-      - uses: actions/upload-pages-artifact@v4
+      - uses: actions/upload-pages-artifact@v5
         with:
           path: site
 
@@ -77,4 +110,4 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5

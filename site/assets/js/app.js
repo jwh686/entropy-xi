@@ -785,11 +785,25 @@
   }
 
   // ------------------------------------------------------------------ router & boot
+  // The cloud job runs every 3 h; GitHub can start it late or skip it. Past this age, say the data is behind
+  // instead of letting finished matches pass for current ones.
+  const STALE_HOURS = 12;
+  function freshness() {
+    if (!S.meta) return;
+    const when = fmtTime(S.meta.generated, { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hour12: false });
+    const age = (Date.now() - new Date(S.meta.generated).getTime()) / 3.6e6;
+    const stale = age > STALE_HOURS;
+    $("#update-text").textContent = `${t("updated")} ${when}`;
+    $("#update-pill").classList.toggle("stale", stale);
+    const note = $("#stale-note");
+    note.hidden = !stale;
+    note.textContent = stale ? t("stale", { time: when, h: Math.floor(age) }) : "";
+  }
   function applyStatic() {
     document.documentElement.lang = S.lang === "zh" ? "zh-CN" : "en";
     $$("[data-i18n]").forEach((el) => (el.innerHTML = t(el.dataset.i18n)));
     $("#lang-btn").textContent = S.lang === "zh" ? "EN" : "中文";
-    if (S.meta) $("#update-text").textContent = `${t("updated")} ${fmtTime(S.meta.generated, { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hour12: false })}`;
+    freshness();
   }
   function route() {
     if (!S.meta || !S.pred) return;  // data not loaded (boot shows the error)
@@ -825,6 +839,7 @@
     }
     applyStatic();
     route();
+    setInterval(freshness, 10 * 60 * 1000);  // a tab left open keeps judging the data's age
   }
 
   // ------------------------------------------------------------------ animated network background

@@ -26,7 +26,7 @@ feed the ratings (European / Asian cup opponents). China Sports Lottery prices a
 | Models | Poisson GLM + LightGBM-Poisson (+ OPR) for expected goals; logistic regression, random forest, XGBoost, MLP + Dixon–Coles for 1X2; ensemble weights from out-of-sample predictions only; reconciliation of 1X2 with the score matrix | `models/predictor.py` |
 | Market | Market-implied expected goals (de-vigged consensus), blended with the model at the out-of-sample optimal weight; handicap/goal-line settlement maths incl. quarter lines | `models/markets.py`, `models/picks.py` |
 | Validation | Walk-forward by season (club folds from Aug 2013, international folds from Jan 2012); 2013–2021 for choosing settings, 2022+ untouched hold-out | `pipeline/train.py`, `pipeline/backtest.py` |
-| Publishing | Daily: refresh → rebuild → predict next 36 h → freeze in ledger → settle → export JSON | `pipeline/daily.py`, `pipeline/export.py` |
+| Publishing | Every 3 h: refresh → rebuild → predict next 36 h → freeze in ledger → settle → export JSON | `pipeline/daily.py`, `pipeline/export.py` |
 
 ## What the backtest says (walk-forward, hold-out = seasons 2022/23 onward)
 
@@ -60,7 +60,7 @@ Use `-X utf8` on Windows (GBK console).
 * **Windows**: `scripts\register_task.ps1 -Time "11:00"` registers a daily scheduled task running `scripts\run_daily.ps1`
   (which also rebuilds/retrains on Mondays). Logs go to `logs\`.
 * **Cloud (recommended for a public site)**: push the repository to GitHub, enable *Pages → Source: GitHub Actions*.
-  `.github/workflows/daily.yml` runs at 12:00 Beijing time, commits the frozen ledger (`data/ledger/`) and
+  `.github/workflows/daily.yml` runs every 3 hours, commits the frozen ledger (`data/ledger/`) and
   `site/data/`, and deploys `site/` to GitHub Pages. The git history doubles as a public audit trail.
 
 ## Data & integrity notes

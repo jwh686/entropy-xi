@@ -64,6 +64,10 @@ button { font-family: inherit; }
   border: 1px solid var(--line); border-radius: 999px; font-family: var(--mono); }
 .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--win); box-shadow: 0 0 8px var(--win); animation: pulse 2s infinite; }
 @keyframes pulse { 50% { opacity: .35; } }
+.update-pill.stale { color: var(--gold); border-color: rgba(255,209,102,.45); }
+.update-pill.stale .dot { background: var(--gold); box-shadow: 0 0 8px var(--gold); }
+.stale-note { position: relative; z-index: 1; width: min(1264px, calc(100% - 56px)); margin: 18px auto -10px; padding: 10px 14px;
+  border: 1px solid rgba(255,209,102,.45); border-radius: var(--radius-s); background: rgba(255,209,102,.08); color: var(--gold); font-size: 13px; line-height: 1.6; }
 .lang-btn { background: transparent; color: var(--cyan); border: 1px solid var(--line-2); border-radius: 8px; padding: 6px 10px; cursor: pointer; font-family: var(--display); font-size: 12px; }
 .menu-btn { display: none; background: none; border: 0; cursor: pointer; padding: 6px; }
 .menu-btn span { display: block; width: 22px; height: 2px; background: var(--text); margin: 4px 0; border-radius: 2px; }
@@ -289,6 +293,7 @@ table.t tr:hover td { background: rgba(47,107,255,.06); }
 @media (max-width: 720px) {
   .topbar { padding: 10px 16px; gap: 12px; }
   .update-pill { display: none; }
+  .stale-note { width: calc(100% - 32px); margin-top: 14px; }
   .app { padding: 18px 16px 40px; }
   .g2, .g3 { grid-template-columns: 1fr; }
   .cards { grid-template-columns: 1fr; }
